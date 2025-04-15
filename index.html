@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>자! 저와 친구가 되겠어요.</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -24,6 +25,11 @@
                 <input type="text" id="userInput" placeholder="Type your message...">
                 <button id="sendButton">Send</button>
             </div>
+            <div class="typing-indicator hidden" id="typingIndicator">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
         </div>
     </div>
 
@@ -35,6 +41,15 @@
             const chatMessages = document.getElementById('chatMessages');
             const userInput = document.getElementById('userInput');
             const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+            
+            // Google API 설정
+            const API_KEY = "YOUR_GOOGLE_API_KEY"; // 실제 사용 시 API 키로 대체해야 합니다
+            
+            // 대화 기록 저장
+            let conversationHistory = [
+                { role: "system", content: "You are a friendly English conversation partner. Your goal is to help the user practice English. Keep your responses friendly, natural, and conversational. Ask follow-up questions to keep the conversation going. Always respond in English even if the user types in another language." }
+            ];
             
             // 시작 버튼 클릭 시 대화창 표시
             startButton.addEventListener('click', function() {
@@ -46,6 +61,10 @@
             closeButton.addEventListener('click', function() {
                 conversationContainer.classList.add('hidden');
                 chatMessages.innerHTML = '';
+                // 대화 기록 초기화
+                conversationHistory = [
+                    { role: "system", content: "You are a friendly English conversation partner. Your goal is to help the user practice English. Keep your responses friendly, natural, and conversational. Ask follow-up questions to keep the conversation going. Always respond in English even if the user types in another language." }
+                ];
             });
             
             // 메시지 전송 기능
@@ -55,10 +74,14 @@
                     addMessage('You', message);
                     userInput.value = '';
                     
-                    // 자동 응답 (실제로는 여기에 API 연결 등이 필요)
-                    setTimeout(function() {
-                        respondToMessage(message);
-                    }, 1000);
+                    // 대화 기록에 사용자 메시지 추가
+                    conversationHistory.push({ role: "user", content: message });
+                    
+                    // 타이핑 표시기 보이기
+                    typingIndicator.classList.remove('hidden');
+                    
+                    // Google의 Vertex AI API로 응답 가져오기
+                    fetchAIResponse();
                 }
             }
             
@@ -83,31 +106,122 @@
             
             // 대화 시작 함수
             function startConversation() {
-                addMessage('Bot', 'Hello! Nice to meet you. What\'s your name?');
+                typingIndicator.classList.remove('hidden');
+                
+                // 시스템 메시지로 대화 시작
+                setTimeout(() => {
+                    typingIndicator.classList.add('hidden');
+                    addMessage('Bot', 'Hello! I\'m your English conversation partner. Nice to meet you! What would you like to talk about today?');
+                    conversationHistory.push({ 
+                        role: "assistant", 
+                        content: "Hello! I'm your English conversation partner. Nice to meet you! What would you like to talk about today?" 
+                    });
+                }, 1500);
             }
             
-            // 메시지에 응답하는 함수
-            function respondToMessage(message) {
+            // Google Vertex AI API를 사용하여 응답 가져오기
+            async function fetchAIResponse() {
+                try {
+                    // 실제 API 구현에서는 아래 URL과 헤더를 적절하게 수정해야 합니다
+                    const url = `https://us-central1-aiplatform.googleapis.com/v1/projects/YOUR_PROJECT_ID/locations/us-central1/publishers/google/models/gemini-pro:generateContent?key=${API_KEY}`;
+                    
+                    const requestData = {
+                        contents: conversationHistory.map(msg => ({
+                            role: msg.role === "user" ? "USER" : msg.role === "assistant" ? "MODEL" : "SYSTEM",
+                            parts: [{ text: msg.content }]
+                        })),
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024,
+                        }
+                    };
+                    
+                    // 실제 API 호출 (테스트를 위해 주석 처리하고 모의 응답 사용)
+                    /*
+                    const response = await axios.post(url, requestData, {
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const aiResponse = response.data.candidates[0].content.parts[0].text;
+                    */
+                    
+                    // API 키가 없는 경우를 위한 모의 응답 (실제 구현 시 삭제)
+                    await simulateTyping();
+                    generateMockResponse();
+                    
+                } catch (error) {
+                    console.error('Error fetching AI response:', error);
+                    typingIndicator.classList.add('hidden');
+                    addMessage('Bot', 'Sorry, I had trouble connecting. Could you try again?');
+                }
+            }
+            
+            // 모의 타이핑 지연 (실제 API 구현 시 삭제)
+            function simulateTyping() {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        resolve();
+                    }, 1500 + Math.random() * 1000);
+                });
+            }
+            
+            // 모의 응답 생성 (실제 API 구현 시 삭제)
+            function generateMockResponse() {
+                const lastUserMessage = conversationHistory.filter(msg => msg.role === "user").pop()?.content.toLowerCase();
                 let response;
                 
-                // 간단한 응답 로직
-                if (message.toLowerCase().includes('name')) {
-                    response = 'My name is English Conversation Bot. I\'m here to help you practice English!';
-                } else if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-                    response = 'Hello there! How are you doing today?';
-                } else if (message.toLowerCase().includes('how are you')) {
-                    response = 'I\'m doing great, thanks for asking! How about you?';
-                } else if (message.toLowerCase().includes('weather')) {
-                    response = 'I don\'t have real-time weather data, but I hope it\'s nice where you are!';
-                } else if (message.toLowerCase().includes('thank')) {
-                    response = 'You\'re welcome! Is there anything else you\'d like to talk about?';
-                } else if (message.toLowerCase().includes('bye') || message.toLowerCase().includes('goodbye')) {
-                    response = 'Goodbye! It was nice talking to you. Come back again soon!';
+                // 이전 대화 컨텍스트 기반 응답
+                const messageCount = conversationHistory.filter(msg => msg.role === "user").length;
+                
+                if (lastUserMessage.includes('name')) {
+                    response = "My name is Gemini, your English conversation partner. I'm designed to help you practice English! What's your name?";
+                } else if (lastUserMessage.includes('hello') || lastUserMessage.includes('hi')) {
+                    if (messageCount > 2) {
+                        response = "Hello again! It's great to continue our conversation. What have you been up to since we last chatted?";
+                    } else {
+                        response = "Hello there! It's wonderful to meet you. How are you feeling today? Is there anything specific you'd like to talk about?";
+                    }
+                } else if (lastUserMessage.includes('how are you')) {
+                    response = "I'm doing really well, thank you for asking! I'm always happy to chat and help people practice their English. How about you? How has your day been so far?";
+                } else if (lastUserMessage.includes('weather')) {
+                    response = "Although I don't have real-time weather data, I'd love to hear about the weather where you are! Is it sunny, rainy, or something else? What kind of weather do you enjoy the most?";
+                } else if (lastUserMessage.includes('thank')) {
+                    response = "You're very welcome! I'm glad I could help. Is there anything else you'd like to discuss or practice? Maybe we could talk about your hobbies or interests?";
+                } else if (lastUserMessage.includes('bye') || lastUserMessage.includes('goodbye')) {
+                    response = "It was really nice talking with you today! I hope we can chat again soon. Remember, practice makes perfect with language learning. Have a wonderful day!";
+                } else if (lastUserMessage.includes('hobby') || lastUserMessage.includes('like to do')) {
+                    response = "That's an interesting question about hobbies! I enjoy helping people learn languages. What about you? What do you enjoy doing in your free time? Sports, reading, music, or something else perhaps?";
+                } else if (lastUserMessage.includes('movie') || lastUserMessage.includes('film') || lastUserMessage.includes('watch')) {
+                    response = "Movies are a great topic for conversation! I'd love to hear about your favorite films or what you've watched recently. What genres do you enjoy most? Do you prefer action, comedy, drama, or something else?";
+                } else if (lastUserMessage.includes('food') || lastUserMessage.includes('eat')) {
+                    response = "Food is always a fascinating subject! Different cultures have such wonderful cuisines. What's your favorite food? Do you enjoy cooking yourself, or do you prefer eating out at restaurants?";
+                } else if (lastUserMessage.includes('travel') || lastUserMessage.includes('country') || lastUserMessage.includes('place')) {
+                    response = "Traveling is such an enriching experience! Have you visited any interesting places? If you could travel anywhere in the world, where would you go and why? I'd love to hear about your dream destination.";
                 } else {
-                    response = 'That\'s interesting! Could you tell me more about that?';
+                    const followUpQuestions = [
+                        "That's really interesting! Could you tell me more about that?",
+                        "I'd love to hear more about your perspective on this. Can you elaborate?",
+                        "That's fascinating! What else can you share about this topic?",
+                        "I'm curious to know more. What do you think about that?",
+                        "That's a great point! How did you come to that conclusion?",
+                        "I see what you mean. Have you always felt this way about it?",
+                        "That's worth thinking about. How does this relate to your everyday life?",
+                        "I appreciate you sharing that. What other thoughts do you have on this subject?"
+                    ];
+                    
+                    // 무작위로 후속 질문 선택
+                    response = followUpQuestions[Math.floor(Math.random() * followUpQuestions.length)];
                 }
                 
+                typingIndicator.classList.add('hidden');
                 addMessage('Bot', response);
+                
+                // 대화 기록에 봇 응답 추가
+                conversationHistory.push({ role: "assistant", content: response });
             }
         });
     </script>
