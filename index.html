@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자! 저와 친구가 되겠어요.</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>자! 제가 친구가 되겠어요.</h1>
+        <p>아래 버튼을 클릭하면 영어 대화가 시작됩니다.</p>
+        <button id="startButton">대화 시작하기</button>
+        
+        <div id="conversationContainer" class="hidden">
+            <div class="chat-header">
+                <h2>English Conversation</h2>
+                <button id="closeButton">X</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <!-- 메시지들이 여기에 추가됩니다 -->
+            </div>
+            <div class="chat-input">
+                <input type="text" id="userInput" placeholder="Type your message...">
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.getElementById('startButton');
+            const conversationContainer = document.getElementById('conversationContainer');
+            const closeButton = document.getElementById('closeButton');
+            const chatMessages = document.getElementById('chatMessages');
+            const userInput = document.getElementById('userInput');
+            const sendButton = document.getElementById('sendButton');
+            
+            // 시작 버튼 클릭 시 대화창 표시
+            startButton.addEventListener('click', function() {
+                conversationContainer.classList.remove('hidden');
+                startConversation();
+            });
+            
+            // 닫기 버튼 클릭 시 대화창 숨김
+            closeButton.addEventListener('click', function() {
+                conversationContainer.classList.add('hidden');
+                chatMessages.innerHTML = '';
+            });
+            
+            // 메시지 전송 기능
+            function sendMessage() {
+                const message = userInput.value.trim();
+                if (message) {
+                    addMessage('You', message);
+                    userInput.value = '';
+                    
+                    // 자동 응답 (실제로는 여기에 API 연결 등이 필요)
+                    setTimeout(function() {
+                        respondToMessage(message);
+                    }, 1000);
+                }
+            }
+            
+            // 엔터 키로 메시지 전송
+            userInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // 전송 버튼으로 메시지 전송
+            sendButton.addEventListener('click', sendMessage);
+            
+            // 메시지 추가 함수
+            function addMessage(sender, text) {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message ' + (sender === 'You' ? 'user-message' : 'bot-message');
+                messageElement.innerHTML = `<strong>${sender}:</strong> ${text}`;
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // 대화 시작 함수
+            function startConversation() {
+                addMessage('Bot', 'Hello! Nice to meet you. What\'s your name?');
+            }
+            
+            // 메시지에 응답하는 함수
+            function respondToMessage(message) {
+                let response;
+                
+                // 간단한 응답 로직
+                if (message.toLowerCase().includes('name')) {
+                    response = 'My name is English Conversation Bot. I\'m here to help you practice English!';
+                } else if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
+                    response = 'Hello there! How are you doing today?';
+                } else if (message.toLowerCase().includes('how are you')) {
+                    response = 'I\'m doing great, thanks for asking! How about you?';
+                } else if (message.toLowerCase().includes('weather')) {
+                    response = 'I don\'t have real-time weather data, but I hope it\'s nice where you are!';
+                } else if (message.toLowerCase().includes('thank')) {
+                    response = 'You\'re welcome! Is there anything else you\'d like to talk about?';
+                } else if (message.toLowerCase().includes('bye') || message.toLowerCase().includes('goodbye')) {
+                    response = 'Goodbye! It was nice talking to you. Come back again soon!';
+                } else {
+                    response = 'That\'s interesting! Could you tell me more about that?';
+                }
+                
+                addMessage('Bot', response);
+            }
+        });
+    </script>
+</body>
+</html> 
